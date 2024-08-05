@@ -52,14 +52,55 @@ regd_users.post("/login", (req, res) => {
   const token = jwt.sign({ id: userId }, SECRET_KEY, { expiresIn: EXPIRES_IN });
 
   req.session.authorization = token;
+
   return res.json({ message: 'Login successful', token });
 });
 
 // Add a book review
+
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({ message: "Yet to be implemented" });
+  const isbn = req.params.isbn;
+  const userId = req.userId;
+  const review = req.body.review;
+  const book = books[isbn];
+
+  if (!book) {
+    return res.status(404).send('Book not found.');
+  }
+
+  if (!book?.reviews[userId]) {
+    book.reviews = {
+      [userId]: review
+    }
+    return res.status(200).send(`The review for the book with ISBN ${isbn} has been added/updated.`);
+  } else {
+    return res.status(404).send(`Already have a review for user for ISBN ${isbn}`);
+  }
+
 });
+
+
+// Add a book review
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+
+  const isbn = req.params.isbn;
+  const userId = req.userId;
+
+  const book = books[isbn];
+
+  if (!book) {
+    return res.status(404).send('Book not found.');
+  }
+
+  if (book?.reviews[userId]) {
+    delete book.reviews[userId];
+    return res.status(200).send(`Review for the ISBN ${isbn} by the  user ${users[userId].username} has been deleted.`);
+  } else {
+    return res.status(404).send(`No review found for user.`);
+  }
+});
+
+
 
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
